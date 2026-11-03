@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -41,9 +40,11 @@ class _PyVaultAppState extends State<PyVaultApp> {
     if (f == null || sourceBytes == null || busy) return;
     setState(() { busy = true; status = tr('يجري تجهيز الملف محلياً…','Protecting locally…'); });
     try {
-      final Uint8List output = await native.invokeMethod<Uint8List>('protectBytes', {'name': f.name, 'bytes': sourceBytes});
+      final Uint8List? output = await native.invokeMethod<Uint8List>('protectBytes', {'name': f.name, 'bytes': sourceBytes});
+      // invokeMethod returns nullable; a null here means the native side produced nothing, so fail loudly instead of saving an empty file.
+      if (output == null) throw Exception(tr('فشلت المعالجة: لم يُرجع المحرك أي ناتج.','Protection failed: the engine returned no output.'));
       final base = f.name.replaceAll(RegExp(r'\.py$', caseSensitive: false), '');
-      final saved = await FilePicker.saveFile(fileName: '${base}_protected.py', bytes: output, type: FileType.custom, allowedExtensions: ['py'], mimeType: 'text/x-python');
+      final saved = await FilePicker.saveFile(fileName: '${base}_protected.py', bytes: output, mimeType: 'text/x-python');
       setState(() => status = saved == null ? tr('أُلغي الحفظ؛ لم يُرسل الملف لأي جهة.','Save cancelled; no file was sent anywhere.') : tr('تم إنشاء وحفظ الملف المحمي.','Protected file created and saved.'));
     } on PlatformException catch (e) {
       setState(() => status = e.message ?? e.code);
@@ -53,7 +54,7 @@ class _PyVaultAppState extends State<PyVaultApp> {
   Widget card(Widget child) => Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: surface, border: Border.all(color: border), borderRadius: BorderRadius.circular(18)), child: child);
   @override Widget build(BuildContext context) {
     final isRtl = !english;
-    return MaterialApp(debugShowCheckedModeBanner: false, theme: ThemeData.dark(useMaterial3: true).copyWith(scaffoldBackgroundColor: bg, colorScheme: const ColorScheme.dark(primary: blue, secondary: cyan, surface: surface), fontFamily: 'Tajawal'), home: Directionality(textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr, child: Scaffold(
+    return MaterialApp(debugShowCheckedModeBanner: false, theme: ThemeData(useMaterial3: true, brightness: Brightness.dark, fontFamily: 'Tajawal', scaffoldBackgroundColor: bg, colorScheme: const ColorScheme.dark(primary: blue, secondary: cyan, surface: surface)), home: Directionality(textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr, child: Scaffold(
       appBar: AppBar(backgroundColor: bg, title: Text('PyVault', style: const TextStyle(fontWeight: FontWeight.w800)), actions: [Builder(builder: (context) => IconButton(onPressed: () => Scaffold.of(context).openEndDrawer(), icon: const Icon(Icons.menu_rounded))) ]),
       endDrawer: Drawer(backgroundColor: surface, width: 300, child: SafeArea(child: Padding(padding: const EdgeInsets.all(18), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         const Padding(padding: EdgeInsets.fromLTRB(6,16,6,24), child: Text('PyVault', style: TextStyle(fontSize: 22,fontWeight: FontWeight.w800,color: textC))),
