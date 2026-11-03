@@ -20,7 +20,7 @@
 2. من تبويب **Actions** شغّل **Build PyVault Android**، أو ادفع commit إلى `main`.
 3. عند نجاح المهمة نزّل artifact باسم `pyvault-arm64-release-apk`.
 
-يبني Workflow إصدار release لمعمارية `arm64-v8a` فقط. لا يشمل x86/x86_64 أو ARM 32-bit. يستخدم Flutter stable وJava 17 وChaquopy 17.1 وPython 3.13. يضمّن `cryptography==42.0.8` لنواة التشفير داخل التطبيق. اختير wheel هذا الإصدار بعد إصدار بناء متوافق مع صفحات ذاكرة Android ذات 16KB في يوليو 2026؛ مع ذلك يلزم اختبار APK الفعلي على أجهزة الهدف. لم تُوفّر هذه البيئة Flutter SDK أو Android SDK، لذا لم أُنتج APK هنا ولم أتمكن من اختبار البناء أو الواجهة على جهاز Android. يجب اعتبار تشغيل Workflow على GitHub خطوة البناء النهائية، لا APK مبنياً مسبقاً.
+يبني Workflow إصدار release لمعمارية `arm64-v8a` فقط. لا يشمل x86/x86_64 أو ARM 32-bit. يستخدم Flutter stable وJava 17 وChaquopy 17.2 وPython 3.13. يضمّن `cryptography==42.0.8` لنواة التشفير داخل التطبيق. اختير wheel هذا الإصدار بعد إصدار بناء متوافق مع صفحات ذاكرة Android ذات 16KB في يوليو 2026؛ مع ذلك يلزم اختبار APK الفعلي على أجهزة الهدف. لم تُوفّر هذه البيئة Flutter SDK أو Android SDK، لذا لم أُنتج APK هنا ولم أتمكن من اختبار البناء أو الواجهة على جهاز Android. يجب اعتبار تشغيل Workflow على GitHub خطوة البناء النهائية، لا APK مبنياً مسبقاً.
 
 ## اختبار نواة الحماية محلياً
 
@@ -58,3 +58,7 @@ python script_protected.py
 [3]: https://chaquo.com/chaquopy/doc/current/changelog.html "Chaquopy changelog"
 [4]: https://github.com/chaquo/chaquopy/issues/1448 "Chaquopy cryptography wheel 16 KB page alignment"
 [5]: https://pub.dev/packages/file_picker "Flutter File Picker"
+
+
+## arm64-v8a فقط
+يُثبَّت `target-platform=android-arm64` في `gradle.properties`، ويُفرَض `abiFilters` على كل أنواع البناء (debug/release)، وتُستبعد مكتبات `armeabi-v7a` و`x86` و`x86_64` من الـAPK، وتفشل خطوة التحقق في الـWorkflow إن ظهرت أي معمارية أخرى.
