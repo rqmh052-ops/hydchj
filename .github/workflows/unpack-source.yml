@@ -2,6 +2,8 @@ name: Import PyVault source bundle
 on:
   push:
     branches: [main]
+    paths:
+      - 'PyVault_source.zip.b64.part03'
 permissions:
   contents: write
 jobs:
@@ -11,12 +13,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Unpack the real project files
+      - name: Reassemble and unpack the project
         shell: bash
         run: |
           python - <<'PY'
-          import pathlib, zipfile
+          import base64, pathlib, zipfile
+          parts = sorted(pathlib.Path(".").glob("PyVault_source.zip.b64.part*"))
+          if len(parts) != 4:
+              raise SystemExit(f"Expected 4 bundle parts, found {len(parts)}")
+          encoded = "".join(p.read_text(encoding="ascii") for p in parts)
           archive = pathlib.Path("PyVault_source.zip")
+          archive.write_bytes(base64.b64decode(encoded, validate=True))
           with zipfile.ZipFile(archive) as z:
               for item in z.infolist():
                   path = pathlib.PurePosixPath(item.filename)
@@ -24,9 +31,11 @@ jobs:
                       raise SystemExit("Unsafe archive path: " + item.filename)
               z.extractall(".")
           archive.unlink()
+          for part in parts:
+              part.unlink()
           pathlib.Path(".github/workflows/unpack-source.yml").unlink()
           PY
-      - name: Commit extracted source tree
+      - name: Commit the extracted project tree
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
