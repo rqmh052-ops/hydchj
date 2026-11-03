@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'PyVault_source.zip.b64.part05'
+      - 'PyVault_source.zip.b64.part11'
 permissions:
   contents: write
 jobs:
@@ -19,8 +19,8 @@ jobs:
           python - <<'PY'
           import base64, pathlib, zipfile
           parts = sorted(pathlib.Path(".").glob("PyVault_source.zip.b64.part*"))
-          if len(parts) != 6:
-              raise SystemExit(f"Expected 6 bundle parts, found {len(parts)}")
+          if len(parts) != 12:
+              raise SystemExit(f"Expected 12 bundle parts, found {len(parts)}")
           encoded = "".join(p.read_text(encoding="ascii") for p in parts)
           archive = pathlib.Path("PyVault_source.zip")
           archive.write_bytes(base64.b64decode(encoded, validate=True))
