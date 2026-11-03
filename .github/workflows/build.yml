@@ -22,6 +22,16 @@ jobs:
         with:
           channel: stable
           cache: true
+      - name: Cache Gradle and Android SDK/NDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.android/sdk
+          key: ${{ runner.os }}-gradle-ndk28c-${{ hashFiles('pubspec.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-ndk28c-
       - name: Generate Android Flutter project
         run: |
           cp pubspec.yaml /tmp/pyvault-pubspec.yaml
@@ -47,7 +57,8 @@ jobs:
           dart format lib/main.dart
           flutter analyze
       - name: Build arm64 release APK
-        run: flutter build apk --release --target-platform android-arm64 --obfuscate --split-debug-info=build/symbols
+        timeout-minutes: 20
+        run: flutter build apk --release --target-platform android-arm64 --obfuscate --split-debug-info=build/symbols -- --stacktrace
       - name: Verify APK is arm64-v8a only
         run: |
           unzip -l build/app/outputs/flutter-apk/app-release.apk | awk '{print $4}' | grep '^lib/' > /tmp/libs.txt || true
