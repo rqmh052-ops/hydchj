@@ -1,0 +1,21 @@
+name: pyvault
+description: Offline Python script protection for Android.
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: '>=3.6.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  file_picker: ^13.3.2
+  url_launcher: ^6.3.2
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Tajawal
+      fonts:
+        - asset: Tajawal-Regular.ttf
+        - asset: Tajawal-Bold.ttf
+          weight: 700
+        - asset: Tajawal-ExtraBold.ttf
+          weight: 800

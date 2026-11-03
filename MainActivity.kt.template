@@ -1,0 +1,48 @@
+package com.pyvault.app
+
+import com.chaquo.python.Python
+import com.chaquo.python.android.AndroidPlatform
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+import java.util.concurrent.Executors
+
+class MainActivity : FlutterActivity() {
+    private val executor = Executors.newSingleThreadExecutor()
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "pyvault/protect")
+            .setMethodCallHandler { call, result ->
+                if (call.method != "protectBytes") {
+                    result.notImplemented()
+                    return@setMethodCallHandler
+                }
+                val name = call.argument<String>("name")
+                val bytes = call.argument<ByteArray>("bytes")
+                if (name.isNullOrBlank() || !name.lowercase().endsWith(".py") || bytes == null) {
+                    result.error("bad_input", "Choose a Python .py source file.", null)
+                    return@setMethodCallHandler
+                }
+                if (bytes.size > 32 * 1024 * 1024) {
+                    result.error("too_large", "Maximum source size is 32 MB.", null)
+                    return@setMethodCallHandler
+                }
+                executor.execute {
+                    try {
+                        if (!Python.isStarted()) Python.start(AndroidPlatform(applicationContext))
+                        val module = Python.getInstance().getModule("protector_core")
+                        val output = module.callAttr("protect_bytes", bytes, name).toJava(ByteArray::class.java)
+                        runOnUiThread { result.success(output) }
+                    } catch (t: Throwable) {
+                        runOnUiThread { result.error("protection_failed", t.message ?: "Protection failed.", null) }
+                    }
+                }
+            }
+    }
+
+    override fun onDestroy() {
+        executor.shutdown()
+        super.onDestroy()
+    }
+}
